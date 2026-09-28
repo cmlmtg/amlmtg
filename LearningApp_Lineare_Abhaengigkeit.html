@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lineare Abhängigkeit – Zuordnungs-App</title>
+<style>
+:root{
+  --bg:#f5f3ef;
+  --card:#ffffff;
+  --ink:#252525;
+  --muted:#6d6d6d;
+  --brown:#7a523b;
+  --green:#4f7d62;
+  --red:#a1544d;
+  --blue:#4e6f9b;
+  --line:#ded8d1;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+header{
+  background:var(--brown);
+  color:white;
+  padding:22px 18px;
+}
+header .wrap, main{max-width:1000px;margin:0 auto}
+h1{font-size:1.55rem;margin:0 0 6px}
+header p{margin:0;opacity:.9}
+main{padding:24px 18px 40px}
+.intro{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px;
+  margin-bottom:18px;
+}
+.progress{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin:14px 0;
+  color:var(--muted);
+  font-size:.95rem;
+}
+.bar{
+  height:9px;background:#e7e2dc;border-radius:999px;overflow:hidden;flex:1
+}
+.bar > div{height:100%;background:var(--brown);width:0%;transition:.25s}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 4px 18px rgba(0,0,0,.05);
+}
+.prompt{
+  font-weight:700;
+  margin-bottom:14px;
+  font-size:1.05rem;
+}
+.figure{
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fbfbfb;
+  padding:10px;
+}
+svg{width:100%;height:auto;display:block}
+.actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:18px;
+}
+button{
+  border:none;
+  border-radius:12px;
+  padding:14px 16px;
+  font-size:1rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.dep{background:#eee2dc;color:#5a3426}
+.indep{background:#e2ebe5;color:#2f5c44}
+button:hover{filter:brightness(.98)}
+button:disabled{opacity:.55;cursor:default}
+.feedback{
+  min-height:52px;
+  margin-top:14px;
+  padding:12px 14px;
+  border-radius:10px;
+  display:none;
+}
+.feedback.ok{display:block;background:#e5f0e8;color:#28563c}
+.feedback.no{display:block;background:#f4e4e2;color:#713b36}
+.explain{margin-top:6px;font-size:.94rem}
+.next{
+  margin-top:12px;
+  background:var(--brown);color:#fff;display:none;
+}
+.result{
+  display:none;
+  text-align:center;
+  padding:28px 18px;
+}
+.result h2{margin-top:0}
+.small{font-size:.9rem;color:var(--muted)}
+.legend{margin-top:10px;font-size:.9rem;color:var(--muted)}
+.legend span{margin-right:14px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+@media(max-width:650px){
+  .actions{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Lineare Abhängigkeit oder Unabhängigkeit?</h1>
+    <p>Ordnen Sie die Vektordarstellungen richtig zu.</p>
+  </div>
+</header>
+
+<main>
+  <div class="intro">
+    <b>Aufgabe:</b> Entscheiden Sie bei jeder Abbildung, ob die dargestellten Vektoren linear abhängig oder linear unabhängig sind.
+    <div class="legend">
+      <span><i class="dot" style="background:#4e6f9b"></i>Vektor a</span>
+      <span><i class="dot" style="background:#4f7d62"></i>Vektor b</span>
+      <span><i class="dot" style="background:#a1544d"></i>Vektor c</span>
+    </div>
+  </div>
+
+  <div class="progress">
+    <span id="counter">Aufgabe 1 von 8</span>
+    <div class="bar"><div id="barFill"></div></div>
+    <span id="score">0 Punkte</span>
+  </div>
+
+  <div class="card" id="quizCard">
+    <div class="prompt" id="prompt"></div>
+    <div class="figure" id="figure"></div>
+    <div class="actions">
+      <button class="dep" onclick="answer('dep')">linear abhängig</button>
+      <button class="indep" onclick="answer('indep')">linear unabhängig</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <button id="nextBtn" class="next" onclick="nextQuestion()">Nächste Aufgabe</button>
+  </div>
+
+  <div class="result card" id="result">
+    <h2>Auswertung</h2>
+    <p id="resultText"></p>
+    <button style="background:var(--brown);color:#fff" onclick="restart()">Noch einmal</button>
+  </div>
+</main>
+
+<script>
+const questions = [
+  {
+    prompt:"Zwei Vektoren im Raum",
+    answer:"dep",
+    explain:"Die beiden Vektoren sind parallel. Einer ist ein skalares Vielfaches des anderen.",
+    vectors:[[70,190,180,115,"#4e6f9b","a"],[70,190,235,78,"#4f7d62","b"]]
+  },
+  {
+    prompt:"Zwei Vektoren im Raum",
+    answer:"indep",
+    explain:"Die Vektoren sind nicht parallel. Daher sind zwei von Null verschiedene Vektoren linear unabhängig.",
+    vectors:[[70,190,220,125,"#4e6f9b","a"],[70,190,120,45,"#4f7d62","b"]]
+  },
+  {
+    prompt:"Drei Vektoren im Raum",
+    answer:"dep",
+    explain:"Alle drei Vektoren liegen in derselben Ebene. Der dritte liefert keine neue Raumrichtung.",
+    vectors:[[70,190,210,145,"#4e6f9b","a"],[70,190,135,55,"#4f7d62","b"],[70,190,275,10,"#a1544d","c"]]
+  },
+  {
+    prompt:"Drei Vektoren im Raum",
+    answer:"indep",
+    explain:"Der dritte Vektor verlässt die von den ersten beiden aufgespannte Ebene. Die drei Vektoren spannen den Raum auf.",
+    vectors:[[70,190,220,155,"#4e6f9b","a"],[70,190,120,55,"#4f7d62","b"],[70,190,270,60,"#a1544d","c"]],
+    outOfPlane:true
+  },
+  {
+    prompt:"Zwei Vektoren im Raum",
+    answer:"dep",
+    explain:"Die Vektoren zeigen in entgegengesetzte Richtungen auf derselben Geraden. Auch antiparallele Vektoren sind linear abhängig.",
+    vectors:[[170,120,285,55,"#4e6f9b","a"],[170,120,65,180,"#4f7d62","b"]]
+  },
+  {
+    prompt:"Drei Vektoren im Raum",
+    answer:"dep",
+    explain:"Obwohl kein Vektor parallel zu einem anderen ist, liegen alle drei in einer Ebene. Einer ist Linearkombination der beiden anderen.",
+    vectors:[[70,190,220,160,"#4e6f9b","a"],[70,190,130,55,"#4f7d62","b"],[70,190,285,25,"#a1544d","c"]]
+  },
+  {
+    prompt:"Drei Vektoren im Raum",
+    answer:"indep",
+    explain:"Die drei Vektoren weisen in drei voneinander unabhängige Raumrichtungen. Keiner liegt in der Ebene der beiden anderen.",
+    vectors:[[70,190,220,150,"#4e6f9b","a"],[70,190,130,55,"#4f7d62","b"],[70,190,245,75,"#a1544d","c"]],
+    outOfPlane:true
+  },
+  {
+    prompt:"Zwei Vektoren im Raum",
+    answer:"indep",
+    explain:"Die Vektoren sind nicht parallel und daher linear unabhängig.",
+    vectors:[[70,190,250,190,"#4e6f9b","a"],[70,190,100,65,"#4f7d62","b"]]
+  }
+];
+
+let index=0, points=0, locked=false;
+
+function svgFor(q){
+  let extra = q.outOfPlane ? `
+    <polygon points="70,190 220,150 280,80 130,120" fill="#ece8e2" stroke="#c9c2ba" stroke-width="1.5" opacity=".8"/>
+    <text x="225" y="135" font-size="13" fill="#8a847e">Ebene von a und b</text>` : "";
+  let lines = q.vectors.map(v => `
+    <defs>
+      <marker id="m${v[5]}" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="${v[4]}"></path>
+      </marker>
+    </defs>
+    <line x1="${v[0]}" y1="${v[1]}" x2="${v[2]}" y2="${v[3]}" stroke="${v[4]}" stroke-width="5" marker-end="url(#m${v[5]})"/>
+    <text x="${v[2]+6}" y="${v[3]-5}" font-size="18" font-weight="700" fill="${v[4]}">${v[5]}</text>
+  `).join("");
+  return `
+  <svg viewBox="0 0 340 230" role="img" aria-label="Vektordarstellung">
+    <line x1="55" y1="190" x2="305" y2="190" stroke="#b7b7b7" stroke-width="1.5"/>
+    <line x1="70" y1="205" x2="70" y2="25" stroke="#b7b7b7" stroke-width="1.5"/>
+    <line x1="70" y1="190" x2="25" y2="215" stroke="#b7b7b7" stroke-width="1.5"/>
+    <text x="308" y="194" fill="#777">x</text>
+    <text x="75" y="28" fill="#777">z</text>
+    <text x="18" y="222" fill="#777">y</text>
+    ${extra}
+    ${lines}
+    <circle cx="70" cy="190" r="4" fill="#333"/>
+  </svg>`;
+}
+
+function render(){
+  const q=questions[index];
+  document.getElementById("prompt").textContent=q.prompt;
+  document.getElementById("figure").innerHTML=svgFor(q);
+  document.getElementById("counter").textContent=`Aufgabe ${index+1} von ${questions.length}`;
+  document.getElementById("score").textContent=`${points} Punkte`;
+  document.getElementById("barFill").style.width=`${(index/questions.length)*100}%`;
+  const fb=document.getElementById("feedback");
+  fb.className="feedback"; fb.innerHTML="";
+  document.getElementById("nextBtn").style.display="none";
+  [...document.querySelectorAll(".actions button")].forEach(b=>b.disabled=false);
+  locked=false;
+}
+
+function answer(choice){
+  if(locked) return;
+  locked=true;
+  const q=questions[index];
+  const fb=document.getElementById("feedback");
+  const correct = choice===q.answer;
+  if(correct){ points++; fb.className="feedback ok"; fb.innerHTML="<b>Richtig.</b><div class='explain'>"+q.explain+"</div>";}
+  else{ fb.className="feedback no"; fb.innerHTML="<b>Noch nicht.</b><div class='explain'>"+q.explain+"</div>";}
+  document.getElementById("score").textContent=`${points} Punkte`;
+  document.getElementById("nextBtn").style.display="inline-block";
+  [...document.querySelectorAll(".actions button")].forEach(b=>b.disabled=true);
+}
+
+function nextQuestion(){
+  index++;
+  if(index>=questions.length){
+    document.getElementById("quizCard").style.display="none";
+    const r=document.getElementById("result");
+    r.style.display="block";
+    document.getElementById("barFill").style.width="100%";
+    let note = points===8 ? "Sehr sicher erkannt." : points>=6 ? "Gut – nur wenige Fälle waren noch unsicher." : "Schauen Sie sich besonders den Unterschied zwischen zwei und drei Vektoren noch einmal an.";
+    document.getElementById("resultText").innerHTML=`Sie haben <b>${points} von ${questions.length}</b> Aufgaben richtig gelöst.<br>${note}`;
+  } else render();
+}
+
+function restart(){
+  index=0; points=0;
+  document.getElementById("result").style.display="none";
+  document.getElementById("quizCard").style.display="block";
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
